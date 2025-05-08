@@ -9,7 +9,7 @@
     <div class="header">
         <img src="asset/logo.png" alt="Logo">
         <div class="header-text">
-            <div class="main-title">Solicitudes de Insumos TI</div>
+            <div class="main-title">Administración de Insumos TI</div>
             <div class="sub-title">Hospital Clínico Félix Bulnes</div>
         </div>
     </div>
