@@ -28,7 +28,7 @@ include 'db.php';
     </div>
 </head>
 <body>
-    <div container="">
+    <div class="container">
         <div class="selection-container">
             <?php 
                 $sectors = [
