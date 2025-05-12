@@ -471,6 +471,48 @@ td form {
    z-index: 1000;
 }
 
+.selection-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    margin: 20px;
+}
+
+.selection-box {
+    background-size: cover;
+    background-position: center;
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-top: 77px;
+    max-width: 1600px;
+    text-align: center;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    border-radius: 10px;
+    position: relative;
+    transition: transform 0.3s ease;
+}
+
+.selection-box:hover {
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
+.selection-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.selection-box h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 4px 4px 6px rgba(0, 0, 0, 0.7);
+}
+
 @media (max-width: 700px) {
    .container {
        padding: 20px;

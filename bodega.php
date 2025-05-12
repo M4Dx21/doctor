@@ -44,6 +44,7 @@ if (isset($_GET['query'])) {
     echo json_encode($suggestions);
     exit();
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
