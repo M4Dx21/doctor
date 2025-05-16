@@ -51,48 +51,79 @@ $insumos = mysqli_fetch_all($resultado, MYSQLI_ASSOC);
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="asset/logo.png" alt="Logo">
-        <div class="header-text">
-            <div class="main-title">Solicitar insumos médicos</div>
-            <div class="sub-title">Hospital Clínico Félix Bulnes</div>
-        </div>
-        <button id="cuenta-btn" onclick="toggleAccountInfo()"><?php echo $_SESSION['nombre']; ?></button>
-        <div id="accountInfo" style="display: none;">
-            <p><strong>Usuario: </strong><?php echo $_SESSION['nombre']; ?></p>
-            <form action="logout.php" method="POST">
-                <button type="submit" class="logout-btn">Salir</button>
-            </form>
-            <button type="button" class="volver-btn" onclick="window.location.href='principal.php'">Volver</button>
-        </div>
-    </div>
-
     <div class="container">
         <?php if (count($insumos) > 0): ?>
-            <?php foreach ($insumos as $componente): 
-                $codigo = $componente['codigo'];
-                $imagen = "imagenes/$codigo.jpg";
-                $existe_imagen = file_exists($imagen);
-            ?>
+            <?php foreach ($insumos as $componente): ?>
                 <div class="insumo-card">
-                    <?php if ($existe_imagen): ?>
-                        <img src="<?= $imagen ?>" alt="Imagen de <?= htmlspecialchars($componente['insumo']) ?>">
-                    <?php else: ?>
-                        <img src="asset/no_image_available.png" alt="Sin imagen disponible">
-                    <?php endif; ?>
                     <h3><?= htmlspecialchars($componente['insumo']) ?></h3>
-                    <button class="add-btn" data-insumo="<?= $componente['insumo'] ?>">+</button>
+                    <button class="add-to-cart" data-insumo="<?= htmlspecialchars($componente['insumo']) ?>">Agregar al Carrito</button>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
-            <p>No se encontraron insumos de sutura.</p>
+            <p>No se encontraron insumos.</p>
         <?php endif; ?>
-    </div>
+        <div class="pagination-container">
+            <?php for ($i = 1; $i <= $total_paginas; $i++): ?>
+        <a href="?pagina=<?= $i ?>&cantidad=<?= $cantidad_por_pagina ?>" class="<?= $pagina_actual == $i ? 'active' : '' ?>"><?= $i ?></a>
+            <?php endfor; ?>
+        </div>
+
+        <div id="carrito">
+            <h2>Carrito de Compras</h2>
+            <ul id="carrito-items"></ul>
+            <button onclick="window.location.href='carrito_insumos.php'">Finalizar Compra</button>
+        </div>
+        </div>
     <script>
         function toggleAccountInfo() {
             const info = document.getElementById('accountInfo');
             info.style.display = info.style.display === 'none' ? 'block' : 'none';
         }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Delegación de eventos para agregar insumo al carrito
+            document.addEventListener('click', function(event) {
+                if (event.target.classList.contains('add-to-cart')) {
+                    const insumo = event.target.dataset.insumo;
+                    manejarCarrito('add', insumo);
+                }
+                
+                if (event.target.classList.contains('remove-from-cart')) {
+                    const insumo = event.target.dataset.insumo;
+                    manejarCarrito('remove', insumo);
+                }
+            });
+
+            // Función para manejar el carrito (agregar o quitar)
+            function manejarCarrito(action, insumo) {
+                fetch('carrito_insumos.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ action, insumo })
+                })
+                .then(response => response.json())
+                .then(data => actualizarCarrito(data))
+                .catch(error => console.error('Error en la petición:', error));
+            }
+
+            // Actualizar visualización del carrito
+            function actualizarCarrito(carrito) {
+                const carritoContainer = document.querySelector('#carrito-items');
+                carritoContainer.innerHTML = '';
+
+                if (Array.isArray(carrito) && carrito.length > 0) {
+                    carrito.forEach(item => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `
+                            ${item} 
+                            <button class='remove-from-cart' data-insumo='${item}'>Eliminar</button>
+                        `;
+                        carritoContainer.appendChild(listItem);
+                    });
+                } else {
+                    carritoContainer.innerHTML = '<li>El carrito está vacío</li>';
+                }
+            }
+        });
     </script>
 </body>
 </html>

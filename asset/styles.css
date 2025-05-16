@@ -477,6 +477,73 @@ td form {
     gap: 20px;
     margin: 20px;
 }
+
+#carrito-container {
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+#carrito-container h2 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+#carrito-items {
+    list-style: none;
+    padding: 0;
+}
+
+#carrito-items li {
+    background-color: #ffffff;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+#carrito-items li:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#carrito-items button {
+    background-color: #dc3545;
+    color: #ffffff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#carrito-items button:hover {
+    background-color: #c82333;
+}
+
+/* Estilo del botón de agregar al carrito */
+.add-to-cart {
+    background-color: #28a745;
+    color: #ffffff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.add-to-cart:hover {
+    background-color: #218838;
+}
+
 .insumo-card {
    background-color: #f9f9f9;
    border: 1px solid #ddd;
