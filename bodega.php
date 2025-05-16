@@ -85,9 +85,6 @@ if (isset($_GET['query'])) {
                 </div>
             </form>
         </div>
-        <form action="agregarcomp.php" method="post">
-            <button type="submit">Agregar Insumos</button>
-        </form>
         <?php if (!empty($personas_dentro)): ?>
             <h2>Lista de Insumos</h2>
             <table>
@@ -96,8 +93,8 @@ if (isset($_GET['query'])) {
                 <th>Insumo</th>
                 <th>Formato</th>
                 <th>Stock</th>
-                <th>Ubicacion</th>
                 <th>Fecha</th>
+                <th>Ubicacion</th>
             </tr>
             <?php foreach ($personas_dentro as $componente): ?>
                 <tr>
