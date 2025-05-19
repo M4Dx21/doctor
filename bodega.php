@@ -154,7 +154,6 @@ if (isset($_GET['query'])) {
             <p>No se encontraron resultados para tu búsqueda.</p>
         <?php endif; ?>
     </div>
-
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const input = document.getElementById("codigo");

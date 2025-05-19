@@ -110,15 +110,15 @@ $insumos = mysqli_fetch_all($resultado, MYSQLI_ASSOC);
                 const carritoContainer = document.querySelector('#carrito-items');
                 carritoContainer.innerHTML = '';
 
-                if (Array.isArray(carrito) && carrito.length > 0) {
-                    carrito.forEach(item => {
+                if (Object.keys(carrito).length > 0) {
+                    for (const insumo in carrito) {
                         const listItem = document.createElement('li');
                         listItem.innerHTML = `
-                            ${item} 
-                            <button class='remove-from-cart' data-insumo='${item}'>Eliminar</button>
+                            ${insumo} (x${carrito[insumo]}) 
+                            <button class='remove-from-cart' data-insumo='${insumo}'>Eliminar</button>
                         `;
                         carritoContainer.appendChild(listItem);
-                    });
+                    }
                 } else {
                     carritoContainer.innerHTML = '<li>El carrito está vacío</li>';
                 }

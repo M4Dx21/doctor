@@ -31,10 +31,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function actualizarCarrito(carrito) {
         const carritoContainer = document.querySelector('#carrito-items');
         carritoContainer.innerHTML = '';
-        carrito.forEach(item => {
+
+        if (Object.keys(carrito).length === 0) {
+            carritoContainer.innerHTML = '<li>El carrito está vacío</li>';
+            return;
+        }
+
+        Object.entries(carrito).forEach(([insumo, cantidad]) => {
             const listItem = document.createElement('li');
-            listItem.textContent = item;
-            listItem.innerHTML += ` <button class='remove-from-cart' data-insumo='${item}'>Eliminar</button>`;
+            listItem.innerHTML = `
+                <span>${insumo} (x${cantidad})</span>
+                <button class='remove-from-cart' data-insumo='${insumo}'>Eliminar</button>
+            `;
             carritoContainer.appendChild(listItem);
         });
     }

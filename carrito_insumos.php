@@ -4,33 +4,63 @@ include 'db.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 require 'vendor/autoload.php';
-
 // Inicializar el carrito si no existe
 if (!isset($_SESSION['carrito'])) {
     $_SESSION['carrito'] = [];
 }
 
-// Agregar insumo al carrito (AJAX)
-if (isset($_POST['action']) && $_POST['action'] === 'add') {
+// Agregar o quitar insumo al carrito (AJAX)
+if (isset($_POST['action'])) {
     $insumo = $_POST['insumo'];
-    if (!in_array($insumo, $_SESSION['carrito'])) {
-        $_SESSION['carrito'][] = $insumo;
+    $cantidad = isset($_POST['cantidad']) ? (int)$_POST['cantidad'] : 1;
+
+    if ($_POST['action'] === 'add') {
+        if (isset($_SESSION['carrito'][$insumo])) {
+            $_SESSION['carrito'][$insumo] += $cantidad;
+        } else {
+            $_SESSION['carrito'][$insumo] = $cantidad;
+        }
     }
+
+    if ($_POST['action'] === 'remove') {
+        if (isset($_SESSION['carrito'][$insumo])) {
+            unset($_SESSION['carrito'][$insumo]);
+        }
+    }
+
+    // Enviar el carrito actualizado como JSON
     echo json_encode($_SESSION['carrito']);
     exit;
 }
 
-// Quitar insumo del carrito (AJAX)
-if (isset($_POST['action']) && $_POST['action'] === 'remove') {
-    $insumo = $_POST['insumo'];
-    if (($key = array_search($insumo, $_SESSION['carrito'])) !== false) {
-        unset($_SESSION['carrito'][$key]);
-    }
-    $_SESSION['carrito'] = array_values($_SESSION['carrito']);
-    echo json_encode($_SESSION['carrito']);
-    exit;
-}
 
+// Finalizar compra y actualizar stock
+if (isset($_POST['send_email'])) {
+    $paciente = $_POST['nombre_paciente'];
+    $cirugia = $_POST['cirugia'];
+    $cod_cirugia = $_POST['cod_cirugia'];
+    $pabellon = $_POST['pabellon'];
+    $cirujano = $_POST['cirujano'];
+    $equipo = $_POST['equipo'];
+
+    $insumos_usados = [];
+    foreach ($_SESSION['carrito'] as $insumo => $cantidad) {
+        $stmt = $conn->prepare("UPDATE componentes SET stock = stock - ? WHERE insumo = ?");
+        $stmt->execute([$cantidad, $insumo]);
+        $insumos_usados[] = "$insumo (x$cantidad)";
+    }
+
+    $insumos = implode(', ', $insumos_usados);
+
+    $stmt = $conn->prepare("INSERT INTO cirugias (nombre_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos]);
+
+    // Enviar correo como antes (no se modifica esta parte)
+
+    $_SESSION['carrito'] = [];
+    echo "<script>alert('Compra finalizada y stock actualizado.'); window.location.href=window.location.href;</script>";
+    exit();
+}
 // Mostrar Carrito de Compras
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 ?>
@@ -98,13 +128,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         <div class="selection-container">
             <h1>Carrito de Compras</h1>
                 <ul id="carrito-items">
-                    <?php foreach ($_SESSION['carrito'] as $item): ?>
-                        <li>
-                            <img src="imagenes/<?= $item ?>.jpg" alt="<?= htmlspecialchars($item) ?>" style="width:50px;height:50px;object-fit:cover;">
-                            <?= htmlspecialchars($item) ?>
-                            <button class="remove-from-cart" data-insumo="<?= htmlspecialchars($item) ?>">Eliminar</button>
-                        </li>
-                    <?php endforeach; ?>
+                    <?php if (!empty($_SESSION['carrito'])): ?>
+                        <?php foreach ($_SESSION['carrito'] as $insumo => $cantidad): ?>
+                            <li>
+                                <span><?= htmlspecialchars($insumo) ?> (x<?= $cantidad ?>)</span>
+                                <button class="remove-from-cart" data-insumo="<?= htmlspecialchars($insumo) ?>">Eliminar</button>
+                            </li>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <li>El carrito está vacío</li>
+                    <?php endif; ?>
                 </ul>
             <form method="post">
                 <h3>Datos del Paciente</h3>

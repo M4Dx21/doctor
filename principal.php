@@ -53,7 +53,6 @@ include 'db.php';
                 <?php endforeach; ?>
         </div>
     </div>
-    
     <script>
         function toggleAccountInfo() {
             const info = document.getElementById('accountInfo');

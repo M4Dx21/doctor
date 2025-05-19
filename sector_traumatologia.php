@@ -13,7 +13,6 @@ $sql_total = "SELECT COUNT(*) as total FROM componentes WHERE especialidad IN ('
 $total_resultado = mysqli_query($conn, $sql_total);
 $total_filas = mysqli_fetch_assoc($total_resultado)['total'];
 $total_paginas = ceil($total_filas / $cantidad_por_pagina);
-
 // Consulta con paginación para mostrar todos los insumos
 $sql_final = "SELECT * FROM componentes WHERE especialidad IN ('trauma','quemados') ORDER BY fecha_ingreso DESC LIMIT $cantidad_por_pagina OFFSET $offset";
 $resultado = mysqli_query($conn, $sql_final);
@@ -137,15 +136,15 @@ $insumos = mysqli_fetch_all($resultado, MYSQLI_ASSOC);
                 const carritoContainer = document.querySelector('#carrito-items');
                 carritoContainer.innerHTML = '';
 
-                if (Array.isArray(carrito) && carrito.length > 0) {
-                    carrito.forEach(item => {
+                if (Object.keys(carrito).length > 0) {
+                    for (const insumo in carrito) {
                         const listItem = document.createElement('li');
                         listItem.innerHTML = `
-                            ${item} 
-                            <button class='remove-from-cart' data-insumo='${item}'>Eliminar</button>
+                            ${insumo} (x${carrito[insumo]}) 
+                            <button class='remove-from-cart' data-insumo='${insumo}'>Eliminar</button>
                         `;
                         carritoContainer.appendChild(listItem);
-                    });
+                    }
                 } else {
                     carritoContainer.innerHTML = '<li>El carrito está vacío</li>';
                 }
