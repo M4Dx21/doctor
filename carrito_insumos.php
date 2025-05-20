@@ -4,12 +4,78 @@ include 'db.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 require 'vendor/autoload.php';
-// Inicializar el carrito si no existe
 if (!isset($_SESSION['carrito'])) {
     $_SESSION['carrito'] = [];
 }
 
-// Agregar o quitar insumo al carrito (AJAX)
+// Enviar lista por correo
+if (isset($_POST['send_email'])) {
+    $paciente = $_POST['nombre_paciente'];
+    $cirugia = $_POST['cirugia'];
+    $cod_cirugia = $_POST['cod_cirugia'];
+    $pabellon = $_POST['pabellon'];
+    $cirujano = $_POST['cirujano'];
+    $equipo = $_POST['equipo'];
+    $insumos = implode(', ', $_SESSION['carrito']);
+    $responsable = $_POST['responsable'];
+
+    // Guardar datos de la cirugía
+    $stmt = $conn->prepare("INSERT INTO cirugias (nombre_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos, $responsable]);
+
+    // Obtener todos los correos de usuarios válidos
+    $result = $conn->query("SELECT correo FROM usuarios WHERE correo IS NOT NULL AND correo != ''");
+
+    if ($result->num_rows === 0) {
+        echo "<script>alert('Error: No hay usuarios con correo registrado.'); window.location.href=window.location.href;</script>";
+        exit();
+    }
+
+    // Enviar correo a cada usuario individualmente
+    while ($row = $result->fetch_assoc()) {
+        $correo = $row['correo'];
+
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'valdiviaalejandro2001@gmail.com';
+            $mail->Password = 'vhgg mzzf kqov npjx';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
+
+            $mail->CharSet = 'UTF-8';
+            $mail->Encoding = PHPMailer::ENCODING_BASE64;
+            $mail->setFrom('valdiviaalejandro2001@gmail.com', 'Hospital Clínico Félix Bulnes');
+            $mail->addAddress($correo);
+
+            $mail->Subject = 'Lista de Insumos para Cirugía';
+            $mail->Body = "Se ha programado una cirugía con los siguientes detalles:\n\n";
+            $mail->Body .= "Paciente: $paciente\n";
+            $mail->Body .= "Cirugía: $cirugia\n";
+            $mail->Body .= "Código de cirugía: $cod_cirugia\n";
+            $mail->Body .= "Pabellón: $pabellon\n";
+            $mail->Body .= "Cirujano: $cirujano\n";
+            $mail->Body .= "Equipo médico: $equipo\n";
+            $mail->Body .= "Insumos requeridos: $insumos\n";
+            $mail->Body .= "Responsable del registro: $responsable\n\n";
+            $mail->Body .= "Atentamente,\nSistema de Cirugías - Hospital Clínico Félix Bulnes";
+
+            $mail->send();
+
+        } catch (Exception $e) {
+            echo "<script>alert('Error al enviar el correo a: $correo. Error: {$mail->ErrorInfo}'); window.location.href=window.location.href;</script>";
+            exit();
+        }
+    }
+
+    $_SESSION['carrito'] = [];
+
+    echo "<script>alert('Correo enviado correctamente a todos los usuarios con correo registrado.'); window.location.href=window.location.href;</script>";
+    exit();
+}
+// Agregar o quitar insumo al carrito
 if (isset($_POST['action'])) {
     $insumo = $_POST['insumo'];
     $cantidad = isset($_POST['cantidad']) ? (int)$_POST['cantidad'] : 1;
@@ -33,7 +99,6 @@ if (isset($_POST['action'])) {
     exit;
 }
 
-
 // Finalizar compra y actualizar stock
 if (isset($_POST['send_email'])) {
     $paciente = $_POST['nombre_paciente'];
@@ -42,6 +107,7 @@ if (isset($_POST['send_email'])) {
     $pabellon = $_POST['pabellon'];
     $cirujano = $_POST['cirujano'];
     $equipo = $_POST['equipo'];
+    $responsable = $_POST['responsable'];
 
     $insumos_usados = [];
     foreach ($_SESSION['carrito'] as $insumo => $cantidad) {
@@ -52,10 +118,8 @@ if (isset($_POST['send_email'])) {
 
     $insumos = implode(', ', $insumos_usados);
 
-    $stmt = $conn->prepare("INSERT INTO cirugias (nombre_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos]);
-
-    // Enviar correo como antes (no se modifica esta parte)
+    $stmt = $conn->prepare("INSERT INTO cirugias (nombre_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos, $responsable]);
 
     $_SESSION['carrito'] = [];
     echo "<script>alert('Compra finalizada y stock actualizado.'); window.location.href=window.location.href;</script>";
@@ -126,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 <body>
     <div class="container">
         <div class="selection-container">
-            <h1>Carrito de Compras</h1>
+            <h2>Carrito de Compras</h2>
                 <ul id="carrito-items">
                     <?php if (!empty($_SESSION['carrito'])): ?>
                         <?php foreach ($_SESSION['carrito'] as $insumo => $cantidad): ?>
@@ -140,14 +204,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     <?php endif; ?>
                 </ul>
             <form method="post">
-                <h3>Datos del Paciente</h3>
+                <h3>Datos de cirugia</h3>
                 <input type="text" name="nombre_paciente" placeholder="Nombre del paciente" required>
                 <input type="text" name="cirugia" placeholder="Tipo de cirugía" required>
                 <input type="text" name="cod_cirugia" placeholder="Código de cirugía" required>
                 <input type="text" name="pabellon" placeholder="Pabellón" required>
                 <input type="text" name="cirujano" placeholder="Nombre del cirujano" required>
                 <input type="text" name="equipo" placeholder="Equipo médico" required>
-                <button type="submit" name="send_email">Finalizar Compra</button>
+                <input type="text" name="responsable" placeholder="Responsable preparacion" required>
+                <button type="submit" name="send_email">Finalizar Pedido</button>
             </form>
         </div>
     </div>
@@ -184,76 +249,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 </html>
 <?php
 exit();
-}
-
-// Enviar lista por correo
-if (isset($_POST['send_email'])) {
-    $paciente = $_POST['nombre_paciente'];
-    $cirugia = $_POST['cirugia'];
-    $cod_cirugia = $_POST['cod_cirugia'];
-    $pabellon = $_POST['pabellon'];
-    $cirujano = $_POST['cirujano'];
-    $equipo = $_POST['equipo'];
-    $insumos = implode(', ', $_SESSION['carrito']);
-
-    // Guardar datos de la cirugía
-    $stmt = $conn->prepare("INSERT INTO cirugias (nombre_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos]);
-
-    // Obtener todos los correos de usuarios que tengan correo
-    $result = $conn->query("SELECT correo FROM usuarios WHERE correo IS NOT NULL AND correo != ''");
-
-    if ($result->num_rows === 0) {
-        echo "<script>alert('Error: No hay usuarios con correo registrado.'); window.location.href=window.location.href;</script>";
-        exit();
-    }
-
-    $correos = [];
-    while ($row = $result->fetch_assoc()) {
-        $correos[] = $row['correo'];
-    }
-
-    // Enviar correo a todos los usuarios con correo
-    $mail = new PHPMailer(true);
-    try {
-        $mail->isSMTP();
-        $mail->Host = 'smtp.gmail.com';
-        $mail->SMTPAuth = true;
-        $mail->Username = 'valdiviaalejandro2001@gmail.com';
-        $mail->Password = 'vhgg mzzf kqov npjx';
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = 587;
-
-        $mail->CharSet = 'UTF-8';
-        $mail->Encoding = PHPMailer::ENCODING_BASE64;
-        $mail->setFrom('valdiviaalejandro2001@gmail.com', 'Hospital Clínico');
-
-        // Limpiamos destinatarios para evitar que quede alguno
-        $mail->clearAddresses();
-        $mail->clearBCCs();
-
-        // Agregar solo en BCC los correos encontrados
-        foreach ($correos as $correo) {
-            $mail->addBCC($correo);
-        }
-
-        // Obligatorio agregar un destinatario principal (aunque sea ficticio) para que PHPMailer funcione
-        // Puedes usar un correo temporal o un correo que no sea personal. Aquí se usa uno ficticio:
-        $mail->addAddress('no-reply@hospital.com');
-
-        $mail->Subject = 'Lista de Insumos para Cirugía';
-        $mail->Body = "Paciente: $paciente\nCirugía: $cirugia\nPabellón: $pabellon\nCirujano: $cirujano\nEquipo: $equipo\nInsumos: $insumos";
-
-        $mail->send();
-
-        // Vaciar carrito y alertar
-        $_SESSION['carrito'] = [];
-        echo "<script>alert('Correo enviado correctamente a todos los usuarios con correo registrado.'); window.location.href=window.location.href;</script>";
-        exit();
-
-    } catch (Exception $e) {
-        echo "<script>alert('Error al enviar el correo: {$mail->ErrorInfo}'); window.location.href=window.location.href;</script>";
-        exit();
-    }
 }
 ?>
