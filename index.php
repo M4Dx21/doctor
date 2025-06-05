@@ -17,7 +17,6 @@
         <h2>Selecciona tu usuario</h2>
         <form method="post">
             <button type="submit" name="role" value="admin" class="role-button admin">Peticiones</button>
-            <button type="submit" name="role" value="prestador" class="role-button prestador">Enfermeria</button>
         </form>
         <?php
         if (isset($_POST['role'])) {

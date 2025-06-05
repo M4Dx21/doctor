@@ -13,10 +13,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Quitar insumo del carrito
+    // Escuchar clicks en botones del carrito
     document.addEventListener('click', function(event) {
-        if (event.target.classList.contains('remove-from-cart')) {
-            const insumo = event.target.dataset.insumo;
+        const target = event.target;
+        const insumo = target.dataset.insumo;
+
+        if (target.classList.contains('remove-from-cart')) {
             fetch('carrito_insumos.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -25,9 +27,28 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => actualizarCarrito(data));
         }
+
+        if (target.classList.contains('increase-qty')) {
+            fetch('carrito_insumos.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ action: 'add', insumo })
+            })
+            .then(response => response.json())
+            .then(data => actualizarCarrito(data));
+        }
+
+        if (target.classList.contains('decrease-qty')) {
+            fetch('carrito_insumos.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ action: 'decrease', insumo })
+            })
+            .then(response => response.json())
+            .then(data => actualizarCarrito(data));
+        }
     });
 
-    // Actualizar visualización del carrito
     function actualizarCarrito(carrito) {
         const carritoContainer = document.querySelector('#carrito-items');
         carritoContainer.innerHTML = '';
@@ -41,6 +62,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const listItem = document.createElement('li');
             listItem.innerHTML = `
                 <span>${insumo} (x${cantidad})</span>
+                <button class='decrease-qty' data-insumo='${insumo}'>−</button>
+                <button class='increase-qty' data-insumo='${insumo}'>+</button>
                 <button class='remove-from-cart' data-insumo='${insumo}'>Eliminar</button>
             `;
             carritoContainer.appendChild(listItem);

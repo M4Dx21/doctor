@@ -8,22 +8,47 @@ if (!isset($_SESSION['carrito'])) {
     $_SESSION['carrito'] = [];
 }
 
-// Enviar lista por correo
 if (isset($_POST['send_email'])) {
-    $paciente = $_POST['nombre_paciente'];
+        // Validar que todos los campos estén completos
+            $campos = ['rut_paciente', 'cirugia', 'cod_cirugia', 'pabellon', 'cirujano', 'equipo', 'responsable'];
+            foreach ($campos as $campo) {
+                if (empty($_POST[$campo])) {
+                    echo "<script>alert('Por favor completa todos los campos del formulario.'); window.location.href=window.location.href;</script>";
+                    exit();
+                }
+            }
+
+            // Validar que el carrito tenga insumos
+            if (empty($_SESSION['carrito'])) {
+                echo "<script>alert('No se puede finalizar el pedido. El carrito está vacío.'); window.location.href=window.location.href;</script>";
+                exit();
+            }
+
+    $paciente = $_POST['rut_paciente'];
     $cirugia = $_POST['cirugia'];
     $cod_cirugia = $_POST['cod_cirugia'];
     $pabellon = $_POST['pabellon'];
     $cirujano = $_POST['cirujano'];
     $equipo = $_POST['equipo'];
-    $insumos = implode(', ', $_SESSION['carrito']);
     $responsable = $_POST['responsable'];
 
-    // Guardar datos de la cirugía
-    $stmt = $conn->prepare("INSERT INTO cirugias (nombre_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos, $responsable]);
+    $insumos_usados = [];
 
-    // Obtener todos los correos de usuarios válidos
+    foreach ($_SESSION['carrito'] as $insumo => $cantidad) {
+        // Restar stock del insumo
+        $stmt = $conn->prepare("UPDATE componentes SET stock = stock - ? WHERE insumo = ?");
+        $stmt->execute([$cantidad, $insumo]);
+
+        $insumos_usados[] = "$insumo (x$cantidad)";
+    }
+
+    $insumos_str = implode(', ', $insumos_usados);
+
+    // Guardar en base de datos
+    $stmt = $conn->prepare("INSERT INTO cirugias (rut_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos_str, $responsable]);
+
+    // Obtener correos de usuarios válidos
     $result = $conn->query("SELECT correo FROM usuarios WHERE correo IS NOT NULL AND correo != ''");
 
     if ($result->num_rows === 0) {
@@ -31,7 +56,7 @@ if (isset($_POST['send_email'])) {
         exit();
     }
 
-    // Enviar correo a cada usuario individualmente
+    // Enviar correo a cada usuario
     while ($row = $result->fetch_assoc()) {
         $correo = $row['correo'];
 
@@ -58,7 +83,7 @@ if (isset($_POST['send_email'])) {
             $mail->Body .= "Pabellón: $pabellon\n";
             $mail->Body .= "Cirujano: $cirujano\n";
             $mail->Body .= "Equipo médico: $equipo\n";
-            $mail->Body .= "Insumos requeridos: $insumos\n";
+            $mail->Body .= "Insumos requeridos: $insumos_str\n";
             $mail->Body .= "Responsable del registro: $responsable\n\n";
             $mail->Body .= "Atentamente,\nSistema de Cirugías - Hospital Clínico Félix Bulnes";
 
@@ -71,60 +96,43 @@ if (isset($_POST['send_email'])) {
     }
 
     $_SESSION['carrito'] = [];
-
-    echo "<script>alert('Correo enviado correctamente a todos los usuarios con correo registrado.'); window.location.href=window.location.href;</script>";
+    echo "<script>alert('Pedido finalizado. Stock actualizado y correos enviados.');</script>";
+    header("Location: ".$_SERVER['PHP_SELF']."?success=1");
     exit();
 }
+
 // Agregar o quitar insumo al carrito
 if (isset($_POST['action'])) {
     $insumo = $_POST['insumo'];
     $cantidad = isset($_POST['cantidad']) ? (int)$_POST['cantidad'] : 1;
 
-    if ($_POST['action'] === 'add') {
-        if (isset($_SESSION['carrito'][$insumo])) {
-            $_SESSION['carrito'][$insumo] += $cantidad;
-        } else {
-            $_SESSION['carrito'][$insumo] = $cantidad;
-        }
-    }
+    switch ($_POST['action']) {
+        case 'add':
+            if (isset($_SESSION['carrito'][$insumo])) {
+                $_SESSION['carrito'][$insumo] += $cantidad;
+            } else {
+                $_SESSION['carrito'][$insumo] = $cantidad;
+            }
+            break;
 
-    if ($_POST['action'] === 'remove') {
-        if (isset($_SESSION['carrito'][$insumo])) {
+        case 'remove':
             unset($_SESSION['carrito'][$insumo]);
-        }
+            break;
+
+        case 'decrease':
+            if (isset($_SESSION['carrito'][$insumo])) {
+                $_SESSION['carrito'][$insumo]--;
+                if ($_SESSION['carrito'][$insumo] <= 0) {
+                    unset($_SESSION['carrito'][$insumo]);
+                }
+            }
+            break;
     }
 
-    // Enviar el carrito actualizado como JSON
     echo json_encode($_SESSION['carrito']);
     exit;
 }
 
-// Finalizar compra y actualizar stock
-if (isset($_POST['send_email'])) {
-    $paciente = $_POST['nombre_paciente'];
-    $cirugia = $_POST['cirugia'];
-    $cod_cirugia = $_POST['cod_cirugia'];
-    $pabellon = $_POST['pabellon'];
-    $cirujano = $_POST['cirujano'];
-    $equipo = $_POST['equipo'];
-    $responsable = $_POST['responsable'];
-
-    $insumos_usados = [];
-    foreach ($_SESSION['carrito'] as $insumo => $cantidad) {
-        $stmt = $conn->prepare("UPDATE componentes SET stock = stock - ? WHERE insumo = ?");
-        $stmt->execute([$cantidad, $insumo]);
-        $insumos_usados[] = "$insumo (x$cantidad)";
-    }
-
-    $insumos = implode(', ', $insumos_usados);
-
-    $stmt = $conn->prepare("INSERT INTO cirugias (nombre_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos, $responsable]);
-
-    $_SESSION['carrito'] = [];
-    echo "<script>alert('Compra finalizada y stock actualizado.'); window.location.href=window.location.href;</script>";
-    exit();
-}
 // Mostrar Carrito de Compras
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 ?>
@@ -196,6 +204,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                         <?php foreach ($_SESSION['carrito'] as $insumo => $cantidad): ?>
                             <li>
                                 <span><?= htmlspecialchars($insumo) ?> (x<?= $cantidad ?>)</span>
+                                <button class="decrease-qty" data-insumo="<?= htmlspecialchars($insumo) ?>">-</button>
+                                <button class="increase-qty" data-insumo="<?= htmlspecialchars($insumo) ?>">+</button>
                                 <button class="remove-from-cart" data-insumo="<?= htmlspecialchars($insumo) ?>">Eliminar</button>
                             </li>
                         <?php endforeach; ?>
@@ -205,7 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 </ul>
             <form method="post">
                 <h3>Datos de cirugia</h3>
-                <input type="text" name="nombre_paciente" placeholder="Nombre del paciente" required>
+                <input type="text" name="rut_paciente" placeholder="Rut del paciente sin puntos ni guion" required>
                 <input type="text" name="cirugia" placeholder="Tipo de cirugía" required>
                 <input type="text" name="cod_cirugia" placeholder="Código de cirugía" required>
                 <input type="text" name="pabellon" placeholder="Pabellón" required>
@@ -241,9 +251,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 </style>
     <script src="carrito.js"></script>
     <script>
+        document.addEventListener('click', function(event) {
+            const insumo = event.target.dataset.insumo;
+
+            if (event.target.classList.contains('remove-from-cart')) {
+                actualizar('remove', insumo);
+            }
+
+            if (event.target.classList.contains('decrease-qty')) {
+                actualizar('decrease', insumo);
+            }
+
+            if (event.target.classList.contains('increase-qty')) {
+                actualizar('add', insumo);
+            }
+        });
+
+        function actualizar(action, insumo) {
+            fetch('carrito_insumos.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ action, insumo })
+            })
+            .then(response => response.json())
+            .then(data => actualizarCarrito(data));
+        }
+
         function toggleAccountInfo() {
             const info = document.getElementById('accountInfo');
             info.style.display = info.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function actualizarCarrito(carrito) {
+            const carritoItems = document.getElementById('carrito-items');
+            carritoItems.innerHTML = '';
+
+            if (Object.keys(carrito).length === 0) {
+                carritoItems.innerHTML = '<li>El carrito está vacío</li>';
+                return;
+            }
+
+            for (const insumo in carrito) {
+                const cantidad = carrito[insumo];
+
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span>${insumo} (x${cantidad})</span>
+                    <button class="decrease-qty" data-insumo="${insumo}">-</button>
+                    <button class="increase-qty" data-insumo="${insumo}">+</button>
+                    <button class="remove-from-cart" data-insumo="${insumo}">Eliminar</button>
+                `;
+                carritoItems.appendChild(li);
+            }
         }
     </script>
 </html>
