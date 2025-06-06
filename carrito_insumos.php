@@ -8,6 +8,37 @@ if (!isset($_SESSION['carrito'])) {
     $_SESSION['carrito'] = [];
 }
 
+function formatearRUT($rut) {
+    $rut = str_replace(array("."), "", $rut);
+    return $rut;
+}
+
+function validarRUT($rut) {
+    $rut = str_replace(".", "", $rut);
+
+    if (!preg_match("/^[0-9]{7,8}-[0-9kK]{1}$/", $rut)) {
+        return false;
+    }
+
+    list($rut_numeros, $rut_dv) = explode("-", $rut);
+
+    $suma = 0;
+    $factor = 2;
+    for ($i = strlen($rut_numeros) - 1; $i >= 0; $i--) {
+        $suma += $rut_numeros[$i] * $factor;
+        $factor = ($factor == 7) ? 2 : $factor + 1;
+    }
+
+    $dv_calculado = 11 - ($suma % 11);
+    if ($dv_calculado == 11) {
+        $dv_calculado = '0';
+    } elseif ($dv_calculado == 10) {
+        $dv_calculado = 'K';
+    }
+
+    return strtoupper($dv_calculado) == strtoupper($rut_dv);
+}
+
 if (isset($_POST['send_email'])) {
         // Validar que todos los campos estén completos
             $campos = ['rut_paciente', 'cirugia', 'cod_cirugia', 'pabellon', 'cirujano', 'equipo', 'responsable'];
@@ -33,19 +64,15 @@ if (isset($_POST['send_email'])) {
     $responsable = $_POST['responsable'];
 
     $insumos_usados = [];
-
+    
     foreach ($_SESSION['carrito'] as $insumo => $cantidad) {
-        // Restar stock del insumo
-        $stmt = $conn->prepare("UPDATE componentes SET stock = stock - ? WHERE insumo = ?");
-        $stmt->execute([$cantidad, $insumo]);
-
         $insumos_usados[] = "$insumo (x$cantidad)";
     }
 
     $insumos_str = implode(', ', $insumos_usados);
 
     // Guardar en base de datos
-    $stmt = $conn->prepare("INSERT INTO cirugias (rut_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO cirugias (rut_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'en proceso')");
     $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos_str, $responsable]);
 
     // Obtener correos de usuarios válidos
@@ -159,6 +186,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         </div>
     </div>
     <style>
+        .error-message {
+            color: red;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
         .container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -189,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         .insumo-card h3 {
             margin: 10px 0;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
         }
     </style>
@@ -215,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 </ul>
             <form method="post">
                 <h3>Datos de cirugia</h3>
-                <input type="text" name="rut_paciente" placeholder="Rut del paciente sin puntos ni guion" required>
+                <input type="text" name="rut_paciente" placeholder="RUT del paciente" required id="rut" onblur="validarRUTInput()" oninput="limpiarRut()">
                 <input type="text" name="cirugia" placeholder="Tipo de cirugía" required>
                 <input type="text" name="cod_cirugia" placeholder="Código de cirugía" required>
                 <input type="text" name="pabellon" placeholder="Pabellón" required>
@@ -231,13 +266,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     .carrito-container {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        padding: 12px;
+        gap: 15px;
     }
 
     .carrito-item {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 15px;
         border: 1px solid #ddd;
         padding: 5px;
         border-radius: 5px;
@@ -248,9 +284,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         height: 50px;
         object-fit: cover;
     }
+    .error-message {
+        color: red;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }   
 </style>
-    <script src="carrito.js"></script>
     <script>
+        function validarRUTInput() {
+            const rutInput = document.getElementById("rut").value;
+            let rut = rutInput.replace(/\./g, "").replace("-", "");
+            
+            const regex = /^[0-9]{7,8}[0-9kK]{1}$/;
+            if (!regex.test(rut)) {
+                mostrarError("El RUT ingresado no tiene un formato válido.");
+                return false;
+            }
+
+            const rut_numeros = rut.slice(0, -1);
+            const rut_dv = rut.slice(-1).toUpperCase();
+            
+            let suma = 0;
+            let factor = 2;
+            for (let i = rut_numeros.length - 1; i >= 0; i--) {
+                suma += parseInt(rut.charAt(i)) * factor;
+                factor = (factor === 7) ? 2 : factor + 1;
+            }
+
+            const dv_calculado = 11 - (suma % 11);
+            let dv_final;
+            if (dv_calculado === 11) {
+                dv_final = '0';
+            } else if (dv_calculado === 10) {
+                dv_final = 'K';
+            } else {
+                dv_final = dv_calculado.toString();
+            }
+
+            if (dv_final !== rut_dv) {
+                mostrarError("El RUT ingresado es incorrecto.");
+                return false;
+            }
+            return true;
+        }
+
+        function limpiarRut() {
+            const rutInput = document.getElementById("rut");
+            let rut = rutInput.value;
+            rut = rut.replace(/\./g, "");
+            rutInput.value = rut;
+        }
+        
+        function validarFormulario(event) {
+            if (!validarRUTInput()) {
+                event.preventDefault();
+            }
+        }
+
         document.addEventListener('click', function(event) {
             const insumo = event.target.dataset.insumo;
 
