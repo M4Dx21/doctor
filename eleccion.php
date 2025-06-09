@@ -70,7 +70,7 @@ if (isset($_GET['query'])) {
 <body>
     <div class="container">
         <button class="btn" onclick="window.location.href='principal.php'">Ir a Solicitudes</button>
-        <button class="btn" onclick="window.location.href='devoluciones.php'">Ir a Devoluciones</button>
+        <button class="btn" onclick="window.location.href='peticiones.php'">Ir a Devoluciones</button>
     </div>
     <script>
         function toggleAccountInfo() {
