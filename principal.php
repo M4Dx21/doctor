@@ -15,7 +15,7 @@ include 'db.php';
     <div class="header">
         <img src="asset/logo.png" alt="Logo">
         <div class="header-text">
-            <div class="main-title">Solicitar insumos medicos</div>
+            <div class="main-title">Insumos Medicos</div>
             <div class="sub-title">Hospital Clínico Félix Bulnes</div>
         </div>
         <button id="cuenta-btn" onclick="toggleAccountInfo()"><?php echo $_SESSION['nombre']; ?></button>
@@ -24,6 +24,7 @@ include 'db.php';
             <form action="logout.php" method="POST">
                 <button type="submit" class="logout-btn">Salir</button>
             </form>
+            <button type="button" class="volver-btn" onclick="window.location.href='eleccion.php'">Volver</button>
         </div>
     </div>
 </head>

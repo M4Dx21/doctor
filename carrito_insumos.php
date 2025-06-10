@@ -4,6 +4,7 @@ include 'db.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 require 'vendor/autoload.php';
+$rut_usuario = $_SESSION['rut'];
 if (!isset($_SESSION['carrito'])) {
     $_SESSION['carrito'] = [];
 }
@@ -40,7 +41,6 @@ function validarRUT($rut) {
 }
 
 if (isset($_POST['send_email'])) {
-        // Validar que todos los campos estén completos
             $campos = ['rut_paciente', 'cirugia', 'cod_cirugia', 'pabellon', 'cirujano', 'equipo', 'responsable'];
             foreach ($campos as $campo) {
                 if (empty($_POST[$campo])) {
@@ -49,7 +49,6 @@ if (isset($_POST['send_email'])) {
                 }
             }
 
-            // Validar que el carrito tenga insumos
             if (empty($_SESSION['carrito'])) {
                 echo "<script>alert('No se puede finalizar el pedido. El carrito está vacío.'); window.location.href=window.location.href;</script>";
                 exit();
@@ -62,20 +61,16 @@ if (isset($_POST['send_email'])) {
     $cirujano = $_POST['cirujano'];
     $equipo = $_POST['equipo'];
     $responsable = $_POST['responsable'];
-
     $insumos_usados = [];
-    
+    $fecha_sol = date('Y-m-d H:i:s');
     foreach ($_SESSION['carrito'] as $insumo => $cantidad) {
         $insumos_usados[] = "$insumo (x$cantidad)";
     }
 
     $insumos_str = implode(', ', $insumos_usados);
 
-    // Guardar en base de datos
-    $stmt = $conn->prepare("INSERT INTO cirugias (rut_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'en proceso')");
-    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos_str, $responsable]);
-
-    // Obtener correos de usuarios válidos
+    $stmt = $conn->prepare("INSERT INTO cirugias (rut_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable, estado, rut_usuario, fecha_sol) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'en proceso', ?, ?)");
+    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos_str, $responsable, $rut_usuario, $fecha_sol]);
     $result = $conn->query("SELECT correo FROM usuarios WHERE correo IS NOT NULL AND correo != ''");
 
     if ($result->num_rows === 0) {
@@ -83,7 +78,6 @@ if (isset($_POST['send_email'])) {
         exit();
     }
 
-    // Enviar correo a cada usuario
     while ($row = $result->fetch_assoc()) {
         $correo = $row['correo'];
 
@@ -123,12 +117,10 @@ if (isset($_POST['send_email'])) {
     }
 
     $_SESSION['carrito'] = [];
-    echo "<script>alert('Pedido finalizado. Stock actualizado y correos enviados.');</script>";
     header("Location: ".$_SERVER['PHP_SELF']."?success=1");
     exit();
 }
 
-// Agregar o quitar insumo al carrito
 if (isset($_POST['action'])) {
     $insumo = $_POST['insumo'];
     $cantidad = isset($_POST['cantidad']) ? (int)$_POST['cantidad'] : 1;
@@ -160,7 +152,6 @@ if (isset($_POST['action'])) {
     exit;
 }
 
-// Mostrar Carrito de Compras
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 ?>
 <!DOCTYPE html>
@@ -250,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 </ul>
             <form method="post">
                 <h3>Datos de cirugia</h3>
-                <input type="text" name="rut_paciente" placeholder="RUT del paciente" required id="rut" onblur="validarRUTInput()" oninput="limpiarRut()">
+                <input type="text" name="rut_paciente" placeholder="RUT del paciente (Sin puntos ni guion)" required id="rut" onblur="validarRUTInput()" oninput="limpiarRut()">
                 <input type="text" name="cirugia" placeholder="Tipo de cirugía" required>
                 <input type="text" name="cod_cirugia" placeholder="Código de cirugía" required>
                 <input type="text" name="pabellon" placeholder="Pabellón" required>

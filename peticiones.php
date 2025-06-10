@@ -1,6 +1,13 @@
 <?php
 session_start();
+
 include 'db.php';
+
+if (!isset($_SESSION['rut'])) {
+    die("No se ha iniciado sesión.");
+}
+
+$rut_usuario = $_SESSION['rut'];
 
 $nombre_usuario_filtro = isset($_GET['codigo']) ? $conn->real_escape_string($_GET['codigo']) : '';
 $cantidad_por_pagina = isset($_GET['cantidad']) ? (int)$_GET['cantidad'] : 10;
@@ -8,7 +15,8 @@ $cantidad_por_pagina = in_array($cantidad_por_pagina, [10, 20, 30, 40, 50]) ? $c
 $pagina_actual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($pagina_actual - 1) * $cantidad_por_pagina;
 
-$sql_base = "FROM cirugias WHERE 1";
+$rut_usuario = $conn->real_escape_string($_SESSION['rut']);
+$sql_base = "FROM cirugias WHERE rut_usuario = '$rut_usuario'";
 if (!empty($nombre_usuario_filtro)) {
     $sql_base .= " AND (cod_cirugia LIKE '%$nombre_usuario_filtro%' OR cirugia LIKE '%$nombre_usuario_filtro%')";
 }
@@ -121,7 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["rechazar"])) {
     <div class="header">
         <img src="asset/logo.png" alt="Logo">
         <div class="header-text">
-            <div class="main-title">Gestion de insumos medicos</div>
+            <div class="main-title">Historial de cirugias</div>
             <div class="sub-title">Hospital Clínico Félix Bulnes</div>
         </div>
         <button id="cuenta-btn" onclick="toggleAccountInfo()"><?php echo $_SESSION['nombre']; ?></button>
@@ -152,7 +160,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["rechazar"])) {
             </form>
         </div>
         <?php if (!empty($personas_dentro)): ?>
-            <h2>Lista de Insumos</h2>
+            <h2>Lista de Cirugias</h2>
             <table>
                 <tr>
                     <th>Código de Cirugía</th>
@@ -193,18 +201,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["rechazar"])) {
                     <td><?= htmlspecialchars($cirugia['insumos']) ?></td>
                     <td><?= htmlspecialchars($cirugia['estado']) ?></td>
                     <td>
-                        <?php if ($cirugia['estado'] == 'en proceso'): ?>
-                            <form method="POST" style="display: inline;">
-                                <input type="hidden" name="id" value="<?php echo $cirugia['id']; ?>">
-                                <input type="hidden" name="nro_serie" value="<?php echo $cirugia['id']; ?>">
-                                <button type="submit" name="aceptar" class="aceptar-btn-table">Aceptar</button>
-                            </form>
-                            <form method="POST" style="display: inline;">
-                                <input type="hidden" name="id" value="<?php echo $cirugia['id']; ?>">
-                                <input type="hidden" name="nro_serie" value="<?php echo $cirugia['id']; ?>">
-                                <button type="submit" name="rechazar" class="rechazar-btn-table">Rechazar</button>
-                            </form>
-                            <?php elseif ($cirugia['estado'] == 'aceptada'): ?>
+                            <?php if ($cirugia['estado'] == 'aceptada'): ?>
                                 <form method="GET" action="devolucion_insumos.php" style="display: inline;">
                                     <input type="hidden" name="id" value="<?php echo $cirugia['id']; ?>">
                                     <button type="submit" class="devolver-btn-table">Devolver</button>

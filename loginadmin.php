@@ -2,19 +2,25 @@
 session_start();
 include 'db.php';
 
-function formatearRUT($rut) {
-    $rut = str_replace(array("."), "", $rut);
-    return $rut;
+if ($result->num_rows > 0) {
+    $fila = $result->fetch_assoc();
+
+    $_SESSION['rut'] = $fila['rut'];
+    $_SESSION['nombre'] = $fila['nombre'];
+    
+    header("Location: eleccion.php");
+    exit();
 }
 
 function validarRUT($rut) {
-    $rut = str_replace(".", "", $rut);
-
-    if (!preg_match("/^[0-9]{7,8}-[0-9kK]{1}$/", $rut)) {
+    $rut = str_replace(array(".", "-"), "", $rut);
+    
+    if (!preg_match("/^[0-9]{7,8}[0-9kK]{1}$/", $rut)) {
         return false;
     }
 
-    list($rut_numeros, $rut_dv) = explode("-", $rut);
+    $rut_numeros = substr($rut, 0, -1);
+    $rut_dv = strtoupper(substr($rut, -1));
 
     $suma = 0;
     $factor = 2;
@@ -30,15 +36,17 @@ function validarRUT($rut) {
         $dv_calculado = 'K';
     }
 
-    return strtoupper($dv_calculado) == strtoupper($rut_dv);
+    return $dv_calculado == $rut_dv;
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['solicitar'])) {
     $rut = $_POST['rut'];
     $pass = $_POST['pass'];
 
+    $rut = str_replace(array(".", "-"), "", $rut);
+
     if (validarRUT($rut)) {
-        $sql = "SELECT * FROM usuarios WHERE rut = '$rut' AND pass = '$pass' AND rol ='doctor' ";
+        $sql = "SELECT * FROM usuarios WHERE rut = '$rut' AND pass = '$pass' AND rol ='doctor'";
         $result = $conn->query($sql);
 
         if ($result->num_rows > 0) {
@@ -65,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['solicitar'])) {
     <div class="header">
         <img src="asset/logo.png" alt="Logo">
         <div class="header-text">
-            <div class="main-title">Ingreso Doctores</div>
+            <div class="main-title">Ingreso a bodega de Insumos medicos</div>
             <div class="sub-title">Hospital Clínico Félix Bulnes</div>
         </div>
         <form action="logout.php" method="POST">
@@ -74,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['solicitar'])) {
     </div>
     <script>
         function mostrarError(message) {
-            const errorMessage = document.getElementById("error-message");
+            const errorMessage = document.querySelector(".error-message");
             errorMessage.textContent = message;
             errorMessage.style.display = "block";
         }
@@ -95,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['solicitar'])) {
             let suma = 0;
             let factor = 2;
             for (let i = rut_numeros.length - 1; i >= 0; i--) {
-                suma += parseInt(rut.charAt(i)) * factor;
+                suma += parseInt(rut_numeros.charAt(i)) * factor;
                 factor = (factor === 7) ? 2 : factor + 1;
             }
 
@@ -119,10 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['solicitar'])) {
         function limpiarRut() {
             const rutInput = document.getElementById("rut");
             let rut = rutInput.value;
-            rut = rut.replace(/\./g, "");
+            rut = rut.replace(/\./g, "").replace("-", "");
             rutInput.value = rut;
         }
-        
+
         function validarFormulario(event) {
             if (!validarRUTInput()) {
                 event.preventDefault();
@@ -139,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['solicitar'])) {
         </div>
 
         <form method="POST" action="" onsubmit="validarFormulario(event)">
-            <input type="text" name="rut" placeholder="RUT(con guión)" required id="rut" onblur="validarRUTInput()" oninput="limpiarRut()">
+            <input type="text" name="rut" placeholder="RUT (sin puntos ni guión)" required id="rut" onblur="validarRUT()" oninput="limpiarRut()">
             <input type="password" name="pass" placeholder="Contraseña" required>
             <button type="submit" name="solicitar">INGRESAR</button>
         </form>
