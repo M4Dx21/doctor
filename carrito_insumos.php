@@ -87,7 +87,7 @@ if (isset($_POST['send_email'])) {
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
             $mail->Username = 'valdiviaalejandro2001@gmail.com';
-            $mail->Password = 'vhgg mzzf kqov npjx';
+            $mail->Password = 'pely xdjc ufal yyyz';
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port = 587;
 
@@ -218,6 +218,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             font-size: 14px;
             font-weight: bold;
         }
+        #carrito-items li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background-color: #f9f9f9;
+            font-size: 14px;
+        }
+
+        #carrito-items li span {
+            flex: 1;
+        }
+
+        #carrito-items button {
+            padding: 4px 8px;
+            font-size: 13px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            transition: background-color 0.2s;
+        }
+
+        button.decrease-qty {
+            background-color: #f0ad4e;
+        }
+        button.decrease-qty:hover {
+            background-color: #ec971f;
+        }
+
+        button.increase-qty {
+            background-color: #5cb85c;
+        }
+        button.increase-qty:hover {
+            background-color: #449d44;
+        }
+
+        button.remove-from-cart {
+            background-color: #d9534f;
+        }
+        button.remove-from-cart:hover {
+            background-color: #c9302c;
+        }
     </style>
     <script>carrito.js</script>
 </head>
@@ -326,6 +373,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             const rutInput = document.getElementById("rut");
             let rut = rutInput.value;
             rut = rut.replace(/\./g, "");
+            rut = rut.replace(/-/g, "");
             rutInput.value = rut;
         }
         

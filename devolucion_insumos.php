@@ -1,3 +1,4 @@
+<!-- devolver_insumos.php -->
 <?php
 session_start();
 include 'db.php';
@@ -29,21 +30,6 @@ $insumos_array = explode(',', $lista_insumos);
     <meta charset="UTF-8">
     <title>Devolución de Insumos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <div class="header">
-        <img src="asset/logo.png" alt="Logo">
-        <div class="header-text">
-            <div class="main-title">Gestion de insumos medicos</div>
-            <div class="sub-title">Hospital Clínico Félix Bulnes</div>
-        </div>
-        <button id="cuenta-btn" onclick="toggleAccountInfo()"><?php echo $_SESSION['nombre']; ?></button>
-        <div id="accountInfo" style="display: none;">
-            <p><strong>Usuario: </strong><?php echo $_SESSION['nombre']; ?></p>
-            <form action="logout.php" method="POST">
-                <button type="submit" class="logout-btn">Salir</button>
-            </form>
-            <button type="button" class="volver-btn" onclick="window.location.href='peticiones.php'">Volver</button>
-        </div>
-    </div>
 </head>
 <body>
 <div class="container">
@@ -66,7 +52,7 @@ $insumos_array = explode(',', $lista_insumos);
                     <td><?= htmlspecialchars($nombre_insumo) ?></td>
                     <td><?= $cantidad_solicitada ?></td>
                     <td>
-                        <input type="number" name="devoluciones[<?= htmlspecialchars($nombre_insumo) ?>]" min="0" max="<?= $cantidad_solicitada ?>" value="0">
+                        <input type="number" name="devoluciones[<?= htmlspecialchars($nombre_insumo) ?>]" min="0" max="<?= $cantidad_solicitada ?>" value="0" required>
                     </td>
                 </tr>
                 <?php } ?>
@@ -77,10 +63,10 @@ $insumos_array = explode(',', $lista_insumos);
     </form>
 </div>
 <script>
-        function toggleAccountInfo() {
-            const info = document.getElementById('accountInfo');
-            info.style.display = info.style.display === 'none' ? 'block' : 'none';
-        }
+    function toggleAccountInfo() {
+        const info = document.getElementById('accountInfo');
+        info.style.display = info.style.display === 'none' ? 'block' : 'none';
+    }
 </script>
 </body>
 </html>
