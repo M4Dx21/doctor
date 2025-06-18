@@ -2,16 +2,6 @@
 session_start();
 include 'db.php';
 
-if ($result->num_rows > 0) {
-    $fila = $result->fetch_assoc();
-
-    $_SESSION['rut'] = $fila['rut'];
-    $_SESSION['nombre'] = $fila['nombre'];
-    
-    header("Location: eleccion.php");
-    exit();
-}
-
 function validarRUT($rut) {
     $rut = str_replace(array(".", "-"), "", $rut);
     
@@ -68,12 +58,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['solicitar'])) {
 <head>
     <link rel="stylesheet" href="asset/styles.css">
     <meta charset="UTF-8">
-    <title>Login administracion de insumos del Hospital Clinico Félix Bulnes</title>
+    <title>Login administración de insumos del Hospital Clinico Félix Bulnes</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <div class="header">
         <img src="asset/logo.png" alt="Logo">
         <div class="header-text">
-            <div class="main-title">Ingreso a bodega de Insumos medicos</div>
+            <div class="main-title">Ingreso a bodega de Insumos médicos</div>
             <div class="sub-title">Hospital Clínico Félix Bulnes</div>
         </div>
         <form action="logout.php" method="POST">
@@ -147,17 +137,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['solicitar'])) {
         </div>
 
         <form method="POST" action="" onsubmit="validarFormulario(event)">
-            <input type="text" name="rut" placeholder="RUT (sin puntos ni guión)" required id="rut" onblur="validarRUT()" oninput="limpiarRut()">
+            <input type="text" name="rut" placeholder="RUT (sin puntos ni guion)" required id="rut" onblur="validarRUT()" oninput="limpiarRut()">
             <input type="password" name="pass" placeholder="Contraseña" required>
             <button type="submit" name="solicitar">INGRESAR</button>
         </form>
     </div>
-
     <style>
+        .container {
+            padding: 20px;       
+            width: 30%;    
+            margin: 300px auto 0 auto;
+            border-radius: 15px; 
+            background-color:rgb(255, 255, 255);
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            padding: 30px 10px;           
+            width: 70%;              
+            margin: 3px auto 0 auto; 
+            border-radius: 15px; 
+            background-color: #e8f0fe;
+            box-shadow: 0 0 15px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
         .error-message {
             color: red;
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
+            background-color:rgb(255, 255, 255);
+            border: 1px solidrgb(255, 255, 255);
             padding: 10px;
             border-radius: 5px;
             margin-bottom: 15px;

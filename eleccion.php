@@ -2,34 +2,28 @@
 session_start();
 include 'db.php';
 
-// Filtros desde GET
 $nombre_usuario_filtro = isset($_GET['codigo']) ? $conn->real_escape_string($_GET['codigo']) : '';
 
-// Paginación
 $cantidad_por_pagina = isset($_GET['cantidad']) ? (int)$_GET['cantidad'] : 10;
 $cantidad_por_pagina = in_array($cantidad_por_pagina, [10, 20, 30, 40, 50]) ? $cantidad_por_pagina : 10;
 $pagina_actual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($pagina_actual - 1) * $cantidad_por_pagina;
 
-// Consulta base con filtros
 $sql_base = "FROM componentes WHERE 1";
 
 if (!empty($nombre_usuario_filtro)) {
     $sql_base .= " AND (codigo LIKE '%$nombre_usuario_filtro%' OR insumo LIKE '%$nombre_usuario_filtro%')";
 }
 
-// Consulta total para paginación
 $sql_total = "SELECT COUNT(*) as total " . $sql_base;
 $total_resultado = mysqli_query($conn, $sql_total);
 $total_filas = mysqli_fetch_assoc($total_resultado)['total'];
 $total_paginas = ceil($total_filas / $cantidad_por_pagina);
 
-// Consulta final con paginación
 $sql_final = "SELECT * " . $sql_base . " ORDER BY fecha_ingreso DESC LIMIT $cantidad_por_pagina OFFSET $offset";
 $resultado = mysqli_query($conn, $sql_final);
 $personas_dentro = mysqli_fetch_all($resultado, MYSQLI_ASSOC);
 
-// Autocompletado
 if (isset($_GET['query'])) {
     $query = $conn->real_escape_string($_GET['query']);
     $sql = "SELECT codigo, insumo FROM componentes 
@@ -55,7 +49,7 @@ if (isset($_GET['query'])) {
     <div class="header">
         <img src="asset/logo.png" alt="Logo">
         <div class="header-text">
-            <div class="main-title">Gestion de insumos medicos</div>
+            <div class="main-title">Gestión de insumos médicos</div>
             <div class="sub-title">Hospital Clínico Félix Bulnes</div>
         </div>
         <button id="cuenta-btn" onclick="toggleAccountInfo()"><?php echo $_SESSION['nombre']; ?></button>
