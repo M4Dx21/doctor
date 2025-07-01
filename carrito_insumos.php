@@ -287,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     <?php endif; ?>
                 </ul>
             <form method="post">
-                <h3>Datos de cirugia</h3>
+                <h3>Datos de cirugía</h3>
                 <input type="text" name="rut_paciente" placeholder="RUT del paciente (Sin puntos ni guion)" required id="rut" onblur="validarRUTInput()" oninput="limpiarRut()">
                 <input type="text" name="cirugia" placeholder="Tipo de cirugía" required>
                 <input type="text" name="cod_cirugia" placeholder="Código de cirugía" required>

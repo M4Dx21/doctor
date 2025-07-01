@@ -30,6 +30,21 @@ $insumos_array = explode(',', $lista_insumos);
     <meta charset="UTF-8">
     <title>Devolución de Insumos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <div class="header">
+        <img src="asset/logo.png" alt="Logo">
+        <div class="header-text">
+            <div class="main-title">Devolución de insumos</div>
+            <div class="sub-title">Hospital Clínico Félix Bulnes</div>
+        </div>
+        <button id="cuenta-btn" onclick="toggleAccountInfo()"><?php echo $_SESSION['nombre']; ?></button>
+        <div id="accountInfo" style="display: none;">
+            <p><strong>Usuario: </strong><?php echo $_SESSION['nombre']; ?></p>
+            <form action="logout.php" method="POST">
+                <button type="submit" class="logout-btn">Salir</button>
+            </form>
+            <button type="button" class="volver-btn" onclick="window.location.href='peticiones.php'">Volver</button>
+        </div>
+    </div>
 </head>
 <body>
 <div class="container">
@@ -58,8 +73,8 @@ $insumos_array = explode(',', $lista_insumos);
                 <?php } ?>
             <?php endforeach; ?>
         </table>
-        <button type="submit" class="aceptar-btn-table">Confirmar Devolución</button>
-        <button type="button" class="volver-btn" onclick="window.location='peticiones.php'">Cancelar</button>
+        <button type="submit" class="btn-dashboarda">Confirmar Devolución</button>
+        <button type="button" class="btn-dashboard" onclick="window.location='peticiones.php'">Cancelar</button>
     </form>
 </div>
 <script>
