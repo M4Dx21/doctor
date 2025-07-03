@@ -163,7 +163,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["rechazar"])) {
             <h2>Lista de Cirugias</h2>
             <table>
                 <tr>
-                    <th>Código de Cirugía</th>
                     <th>Cirugía</th>
                     <th>Pabellón</th>
                     <th>Cirujano</th>
@@ -193,7 +192,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["rechazar"])) {
                         }
                         ?>
                 <tr>
-                    <td><?= htmlspecialchars($cirugia['cod_cirugia']) ?></td>
                     <td><?= htmlspecialchars($cirugia['cirugia']) ?></td>
                     <td><?= htmlspecialchars($cirugia['pabellon']) ?></td>
                     <td><?= htmlspecialchars($cirugia['cirujano']) ?></td>

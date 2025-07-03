@@ -41,7 +41,7 @@ function validarRUT($rut) {
 }
 
 if (isset($_POST['send_email'])) {
-            $campos = ['rut_paciente', 'cirugia', 'cod_cirugia', 'pabellon', 'cirujano', 'equipo', 'responsable'];
+            $campos = ['rut_paciente', 'cirugia', 'pabellon', 'cirujano', 'equipo', 'responsable'];
             foreach ($campos as $campo) {
                 if (empty($_POST[$campo])) {
                     echo "<script>alert('Por favor completa todos los campos del formulario.'); window.location.href=window.location.href;</script>";
@@ -56,7 +56,6 @@ if (isset($_POST['send_email'])) {
 
     $paciente = $_POST['rut_paciente'];
     $cirugia = $_POST['cirugia'];
-    $cod_cirugia = $_POST['cod_cirugia'];
     $pabellon = $_POST['pabellon'];
     $cirujano = $_POST['cirujano'];
     $equipo = $_POST['equipo'];
@@ -69,8 +68,8 @@ if (isset($_POST['send_email'])) {
 
     $insumos_str = implode(', ', $insumos_usados);
 
-    $stmt = $conn->prepare("INSERT INTO cirugias (rut_paciente, cirugia, cod_cirugia, pabellon, cirujano, equipo, insumos, responsable, estado, rut_usuario, fecha_sol) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'en proceso', ?, ?)");
-    $stmt->execute([$paciente, $cirugia, $cod_cirugia, $pabellon, $cirujano, $equipo, $insumos_str, $responsable, $rut_usuario, $fecha_sol]);
+    $stmt = $conn->prepare("INSERT INTO cirugias (rut_paciente, cirugia, pabellon, cirujano, equipo, insumos, responsable, estado, rut_usuario, fecha_sol) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'en proceso', ?, ?)");
+    $stmt->execute([$paciente, $cirugia, $pabellon, $cirujano, $equipo, $insumos_str, $responsable, $rut_usuario, $fecha_sol]);
     $result = $conn->query("SELECT correo FROM usuarios WHERE correo IS NOT NULL AND correo != ''");
 
     if ($result->num_rows === 0) {
@@ -100,7 +99,6 @@ if (isset($_POST['send_email'])) {
             $mail->Body = "Se ha programado una cirugía con los siguientes detalles:\n\n";
             $mail->Body .= "Paciente: $paciente\n";
             $mail->Body .= "Cirugía: $cirugia\n";
-            $mail->Body .= "Código de cirugía: $cod_cirugia\n";
             $mail->Body .= "Pabellón: $pabellon\n";
             $mail->Body .= "Cirujano: $cirujano\n";
             $mail->Body .= "Equipo médico: $equipo\n";
@@ -290,7 +288,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 <h3>Datos de cirugía</h3>
                 <input type="text" name="rut_paciente" placeholder="RUT del paciente (Sin puntos ni guion)" required id="rut" onblur="validarRUTInput()" oninput="limpiarRut()">
                 <input type="text" name="cirugia" placeholder="Tipo de cirugía" required>
-                <input type="text" name="cod_cirugia" placeholder="Código de cirugía" required>
                 <input type="text" name="pabellon" placeholder="Pabellón" required>
                 <input type="text" name="cirujano" placeholder="Nombre del cirujano" required>
                 <input type="text" name="equipo" placeholder="Equipo médico" required>
