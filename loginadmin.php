@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['solicitar'])) {
     $rut = str_replace(array(".", "-"), "", $rut);
 
     if (validarRUT($rut)) {
-        $sql = "SELECT * FROM usuarios WHERE rut = '$rut' AND pass = '$pass' AND rol ='doctor'";
+        $sql = "SELECT * FROM usuarios WHERE rut = '$rut' AND pass = '$pass' AND rol ='funcionario'";
         $result = $conn->query($sql);
 
         if ($result->num_rows > 0) {

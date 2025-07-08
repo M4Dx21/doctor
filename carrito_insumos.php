@@ -41,7 +41,7 @@ function validarRUT($rut) {
 }
 
 if (isset($_POST['send_email'])) {
-            $campos = ['rut_paciente', 'cirugia', 'pabellon', 'cirujano', 'equipo', 'responsable'];
+            $campos = ['rut_paciente', 'cirugia', 'pabellon', 'medico_cirujano', 'medico_anestesia', 'arsenalero', 'pabellonero', 'enfermero', 'auxiliar'];
             foreach ($campos as $campo) {
                 if (empty($_POST[$campo])) {
                     echo "<script>alert('Por favor completa todos los campos del formulario.'); window.location.href=window.location.href;</script>";
@@ -53,13 +53,15 @@ if (isset($_POST['send_email'])) {
                 echo "<script>alert('No se puede finalizar el pedido. El carrito está vacío.'); window.location.href=window.location.href;</script>";
                 exit();
             }
-
+    $medico_cirujano = $_POST['medico_cirujano'];
+    $medico_anestesia = $_POST['medico_anestesia'];
+    $arsenalero = $_POST['arsenalero'];
+    $pabellonero = $_POST['pabellonero'];
+    $enfermero = $_POST['enfermero'];
+    $auxiliar = $_POST['auxiliar'];
     $paciente = $_POST['rut_paciente'];
     $cirugia = $_POST['cirugia'];
     $pabellon = $_POST['pabellon'];
-    $cirujano = $_POST['cirujano'];
-    $equipo = $_POST['equipo'];
-    $responsable = $_POST['responsable'];
     $insumos_usados = [];
     $fecha_sol = date('Y-m-d H:i:s');
     foreach ($_SESSION['carrito'] as $insumo => $cantidad) {
@@ -68,8 +70,24 @@ if (isset($_POST['send_email'])) {
 
     $insumos_str = implode(', ', $insumos_usados);
 
-    $stmt = $conn->prepare("INSERT INTO cirugias (rut_paciente, cirugia, pabellon, cirujano, equipo, insumos, responsable, estado, rut_usuario, fecha_sol) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'en proceso', ?, ?)");
-    $stmt->execute([$paciente, $cirugia, $pabellon, $cirujano, $equipo, $insumos_str, $responsable, $rut_usuario, $fecha_sol]);
+    $stmt = $conn->prepare("INSERT INTO cirugias 
+    (rut_paciente, cirugia, pabellon, insumos, medico_cirujano, medico_anestesia, arsenalero, pabellonero, enfermero, auxiliar, estado, rut_usuario, fecha_sol) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en proceso', ?, ?)");
+
+    $stmt->execute([
+        $paciente,
+        $cirugia,
+        $pabellon,
+        $insumos_str,
+        $medico_cirujano,
+        $medico_anestesia,
+        $arsenalero,
+        $pabellonero,
+        $enfermero,
+        $auxiliar,
+        $rut_usuario,
+        $fecha_sol
+    ]);
     $result = $conn->query("SELECT correo FROM usuarios WHERE correo IS NOT NULL AND correo != ''");
 
     if ($result->num_rows === 0) {
@@ -100,10 +118,15 @@ if (isset($_POST['send_email'])) {
             $mail->Body .= "Paciente: $paciente\n";
             $mail->Body .= "Cirugía: $cirugia\n";
             $mail->Body .= "Pabellón: $pabellon\n";
-            $mail->Body .= "Cirujano: $cirujano\n";
-            $mail->Body .= "Equipo médico: $equipo\n";
             $mail->Body .= "Insumos requeridos: $insumos_str\n";
-            $mail->Body .= "Responsable del registro: $responsable\n\n";
+            $mail->Body .= "Equipo Médico:\n";
+            $mail->Body .= "- Cirujano: $medico_cirujano\n";
+            $mail->Body .= "- Anestesista: $medico_anestesia\n";
+            $mail->Body .= "- Arsenalero(a): $arsenalero\n";
+            $mail->Body .= "- Pabellonero(a): $pabellonero\n";
+            $mail->Body .= "- Enfermero(a): $enfermero\n";
+            $mail->Body .= "- Auxiliar: $auxiliar\n\n";
+            $mail->Body .= "Responsable del registro: $rut_usuario\n\n";
             $mail->Body .= "Atentamente,\nSistema de Cirugías - Hospital Clínico Félix Bulnes";
 
             $mail->send();
@@ -174,7 +197,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             <button type="button" class="volver-btn" onclick="window.location.href='principal.php'">Volver</button>
         </div>
     </div>
-    <style>
+    <script>carrito.js</script>
+</head>
+<body>
+    <div class="container">
+        <div class="selection-container">
+            <h2>Carrito de Compras</h2>
+                <ul id="carrito-items">
+                    <?php if (!empty($_SESSION['carrito'])): ?>
+                        <?php foreach ($_SESSION['carrito'] as $insumo => $cantidad): ?>
+                            <li>
+                                <span><?= htmlspecialchars($insumo) ?> (x<?= $cantidad ?>)</span>
+                                <button class="decrease-qty" data-insumo="<?= htmlspecialchars($insumo) ?>">-</button>
+                                <button class="increase-qty" data-insumo="<?= htmlspecialchars($insumo) ?>">+</button>
+                                <button class="remove-from-cart" data-insumo="<?= htmlspecialchars($insumo) ?>">Eliminar</button>
+                            </li>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <li>El carrito está vacío</li>
+                    <?php endif; ?>
+                </ul>
+            <form method="post">
+                <h3>Datos de cirugía</h3>
+                <input type="text" name="rut_paciente" placeholder="RUT del paciente (Sin puntos ni guion)" required id="rut" onblur="validarRUTInput()" oninput="limpiarRut()">
+                <input type="text" name="cirugia" placeholder="Tipo de cirugía" required>
+                <input type="text" name="pabellon" placeholder="Pabellón" required>
+                <h3>Datos del equipo médico</h3>
+                <input type="text" name="medico_cirujano" placeholder="Médico cirujano" required>
+                <input type="text" name="medico_anestesia" placeholder="Médico anestesista" required>
+                <input type="text" name="arsenalero" placeholder="Arsenalero(a)" required>
+                <input type="text" name="pabellonero" placeholder="Pabellonero(a)" required>
+                <input type="text" name="enfermero" placeholder="Enfermero(a)" required>
+                <input type="text" name="auxiliar" placeholder="Auxiliar" required>
+                <button type="submit" name="send_email">Finalizar Pedido</button>
+            </form>
+        </div>
+    </div>
+</body>
+<style>
         .error-message {
             color: red;
             background-color: #f8d7da;
@@ -263,70 +323,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         button.remove-from-cart:hover {
             background-color: #c9302c;
         }
-    </style>
-    <script>carrito.js</script>
-</head>
-<body>
-    <div class="container">
-        <div class="selection-container">
-            <h2>Carrito de Compras</h2>
-                <ul id="carrito-items">
-                    <?php if (!empty($_SESSION['carrito'])): ?>
-                        <?php foreach ($_SESSION['carrito'] as $insumo => $cantidad): ?>
-                            <li>
-                                <span><?= htmlspecialchars($insumo) ?> (x<?= $cantidad ?>)</span>
-                                <button class="decrease-qty" data-insumo="<?= htmlspecialchars($insumo) ?>">-</button>
-                                <button class="increase-qty" data-insumo="<?= htmlspecialchars($insumo) ?>">+</button>
-                                <button class="remove-from-cart" data-insumo="<?= htmlspecialchars($insumo) ?>">Eliminar</button>
-                            </li>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <li>El carrito está vacío</li>
-                    <?php endif; ?>
-                </ul>
-            <form method="post">
-                <h3>Datos de cirugía</h3>
-                <input type="text" name="rut_paciente" placeholder="RUT del paciente (Sin puntos ni guion)" required id="rut" onblur="validarRUTInput()" oninput="limpiarRut()">
-                <input type="text" name="cirugia" placeholder="Tipo de cirugía" required>
-                <input type="text" name="pabellon" placeholder="Pabellón" required>
-                <input type="text" name="cirujano" placeholder="Nombre del cirujano" required>
-                <input type="text" name="equipo" placeholder="Equipo médico" required>
-                <input type="text" name="responsable" placeholder="Responsable preparacion" required>
-                <button type="submit" name="send_email">Finalizar Pedido</button>
-            </form>
-        </div>
-    </div>
-</body>
-<style>
-    .carrito-container {
-        display: flex;
-        flex-wrap: wrap;
-        padding: 12px;
-        gap: 15px;
-    }
 
-    .carrito-item {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        border: 1px solid #ddd;
-        padding: 5px;
-        border-radius: 5px;
-    }
+        .carrito-container {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 12px;
+            gap: 15px;
+        }
 
-    .mini-img {
-        width: 50px;
-        height: 50px;
-        object-fit: cover;
-    }
-    .error-message {
-        color: red;
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 15px;
-    }   
+        .carrito-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .mini-img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+        }
+        .error-message {
+            color: red;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }   
 </style>
     <script>
         function validarRUTInput() {
